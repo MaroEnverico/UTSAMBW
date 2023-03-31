@@ -1,4 +1,4 @@
-const CACHE_NAME = 'c14200080';
+const CACHE_NAME = 'sampah gan';
 const urlsToCache = [
   '/',
   '/index.html',
