@@ -1,37 +1,67 @@
-const CACHE_NAME = 'sampah gan';
-const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/images/*',
-  '/css/*',
-  '/js/*',
-];
-
-self.addEventListener('install', event => {
+self.addEventListener("install", function (event) {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(urlsToCache))
+    caches.open("first-app").then(function (cache) {
+      cache.addAll([
+        "/",
+        "index.html",
+        "blog.html",
+        "about.html",
+        "contact.html",
+        "portfolio-example01.html",
+        "styles.css",
+        "app.js"
+      ]);
+    })
+  );
+  return self.clients.claim();
+});
+
+//cache then network 
+self.addEventListener('fetch', function(event) {
+  event.respondWith(
+    caches.open('first-app')
+      .then(function(cache) {
+        return fetch(event.request)
+          .then(function(res) {
+            cache.put(event.request, res.clone());
+            return res;
+          });
+      })
   );
 });
 
-self.addEventListener('fetch', event => {
+//cache offline
+self.addEventListener('fetch', function(event) {
   event.respondWith(
     caches.match(event.request)
-      .then(response => {
+      .then(function(response) {
         if (response) {
           return response;
+        } else {
+          return fetch(event.request)
+            .then(function(res) {
+              return caches.open('first-app')
+                .then(function(cache) {
+                  return fetch(event.request)
+                  .then(function(res){
+
+                  cache.put(event.request.url, res.clone());
+                  return res;
+                })
+            })
+          })
+            .catch(function(err) {
+              return caches.open('first-app')
+                .then(function(cache) {
+                  return fetch(event.request)
+                  .then(function(res){
+
+                  cache.put(event.request.url, res.clone());
+                  return res;
+                })
+                });
+            });
         }
-
-        return fetch(event.request)
-          .then(response => {
-            const responseToCache = response.clone();
-
-            caches.open(CACHE_NAME)
-              .then(cache => cache.put(event.request, responseToCache));
-
-            return response;
-          });
       })
   );
 });
