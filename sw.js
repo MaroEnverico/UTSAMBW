@@ -1,67 +1,37 @@
-self.addEventListener("install", function (event) {
+const CACHE_NAME = 'c14200080';
+const urlsToCache = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/images/*',
+  '/css/*',
+  '/js/*',
+];
+
+self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open("first-app").then(function (cache) {
-      cache.addAll([
-        "/",
-        "index.html",
-        "blog.html",
-        "about.html",
-        "contact.html",
-        "portfolio-example01.html",
-        "styles.css",
-        "app.js"
-      ]);
-    })
-  );
-  return self.clients.claim();
-});
-
-//cache then network 
-self.addEventListener('fetch', function(event) {
-  event.respondWith(
-    caches.open('first-app')
-      .then(function(cache) {
-        return fetch(event.request)
-          .then(function(res) {
-            cache.put(event.request, res.clone());
-            return res;
-          });
-      })
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(urlsToCache))
   );
 });
 
-//cache offline
-self.addEventListener('fetch', function(event) {
+self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
-      .then(function(response) {
+      .then(response => {
         if (response) {
           return response;
-        } else {
-          return fetch(event.request)
-            .then(function(res) {
-              return caches.open('first-app')
-                .then(function(cache) {
-                  return fetch(event.request)
-                  .then(function(res){
-
-                  cache.put(event.request.url, res.clone());
-                  return res;
-                })
-            })
-          })
-            .catch(function(err) {
-              return caches.open('first-app')
-                .then(function(cache) {
-                  return fetch(event.request)
-                  .then(function(res){
-
-                  cache.put(event.request.url, res.clone());
-                  return res;
-                })
-                });
-            });
         }
+
+        return fetch(event.request)
+          .then(response => {
+            const responseToCache = response.clone();
+
+            caches.open(CACHE_NAME)
+              .then(cache => cache.put(event.request, responseToCache));
+
+            return response;
+          });
       })
   );
 });
